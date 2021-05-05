@@ -85,7 +85,7 @@ func (sc *StorageClient) getAll() ([][]byte, error) {
 			return nil
 		})
 
-		// bboltClient.Close()
+		bboltClient.Close()
 	}
 
 	if sc.Redis != nil && sc.Redis.client != nil {
