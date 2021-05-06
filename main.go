@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"fmt"
 	"io/ioutil"
 
 	oaep "github.com/lorenzodisidoro/rsa-oaep"
@@ -14,9 +13,10 @@ import (
 
 // Error messages
 var (
-	ErrorFilePathNotProvided = errors.New("File path not provided")
-	ErrorValueNotProvided    = errors.New("Value not provided")
-	ErrorKeyNotProvided      = errors.New("Value label not provided")
+	ErrorFilePathNotProvided    = errors.New("file path not provided")
+	ErrorValueNotProvided       = errors.New("value not provided")
+	ErrorKeyNotProvided         = errors.New("value label not provided")
+	ErrorEncryptedValueNotFound = errors.New("encrypted value not found")
 )
 
 // Avocado defines RSA keys and storage configurations
@@ -75,6 +75,10 @@ func (a *Avocado) FindAndDecryptValueBy(key []byte, privateKeyPath string) ([]by
 		return nil, err
 	}
 
+	if encryptedValue == nil {
+		return nil, ErrorEncryptedValueNotFound
+	}
+
 	privateKey, err := getPrivateKeyFromFile(privateKeyPath)
 	if err != nil {
 		return nil, err
@@ -83,7 +87,6 @@ func (a *Avocado) FindAndDecryptValueBy(key []byte, privateKeyPath string) ([]by
 	oaep := oaep.NewRSAOaep(sha256.New())
 	decriptedValue, err := oaep.Dencrypt(privateKey, encryptedValue, key)
 	if err != nil {
-		fmt.Println("Error occurred:", err)
 		return nil, err
 	}
 
@@ -94,6 +97,12 @@ func (a *Avocado) FindAndDecryptValueBy(key []byte, privateKeyPath string) ([]by
 // @return all keys
 func (a *Avocado) GetAllKeys() ([][]byte, error) {
 	return a.storage.getAll()
+}
+
+// Delete remove a key
+// @return error
+func (a *Avocado) Delete(key []byte) error {
+	return a.storage.delete(key)
 }
 
 // readFile data from file

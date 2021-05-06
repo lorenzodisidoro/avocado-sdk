@@ -7,12 +7,13 @@ import (
 	"testing"
 )
 
-func TestBboltStorageGetAndSet(t *testing.T) {
+func TestBboltStorageGetSetAndDelete(t *testing.T) {
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// create a new key
 	key := []byte("my_key")
 	value := []byte("my_value")
 	storeClient := &StorageClient{
@@ -37,9 +38,25 @@ func TestBboltStorageGetAndSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if bytes.Compare(returned, value) != 0 {
+	if !bytes.Equal(returned, value) {
 		t.Fatal("Returned should be", string(value))
 	}
+
+	// delete the key
+	err = storeClient.delete(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	deletedValue, err := storeClient.get(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if deletedValue != nil {
+		t.Fatal("Returned value should be nil")
+	}
+
 }
 
 func TestBboltStorageGetAll(t *testing.T) {
@@ -74,7 +91,7 @@ func TestBboltStorageGetAll(t *testing.T) {
 
 	isPresent := false
 	for i := 0; i < len(keys); i++ {
-		if bytes.Compare(keys[i], key) == 0 {
+		if bytes.Equal(keys[i], key) {
 			isPresent = true
 		}
 	}

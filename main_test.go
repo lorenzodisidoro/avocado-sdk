@@ -109,6 +109,16 @@ func TestEncryptDecryptMessage(t *testing.T) {
 	if string(valueDecrypted) != value1 {
 		t.Fatal("Should be expected message equals to ", value1)
 	}
+
+	err = avocado.Delete([]byte(key1))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = avocado.FindAndDecryptValueBy([]byte(key1), privateKeyPath)
+	if err == nil {
+		t.Fatal("The error should be ", ErrorEncryptedValueNotFound)
+	}
 }
 
 // privateKeyToBytes converts a private key to bytes form

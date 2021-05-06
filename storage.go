@@ -38,7 +38,7 @@ type StorageClient struct {
 func (sc *StorageClient) New() error {
 
 	if sc.Bbolt != nil && sc.Redis != nil {
-		return errors.New("Is not possible instantiate more than one storage client")
+		return errors.New("is not possible instantiate more than one storage client")
 	}
 
 	if sc.Redis != nil {
@@ -73,7 +73,7 @@ func (sc *StorageClient) getAll() ([][]byte, error) {
 			return nil, err
 		}
 
-		bboltClient.View(func(tx *bolt.Tx) error {
+		err = bboltClient.View(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte(sc.Bbolt.BucketName))
 			if b != nil {
 				c := b.Cursor()
@@ -85,7 +85,8 @@ func (sc *StorageClient) getAll() ([][]byte, error) {
 			return nil
 		})
 
-		bboltClient.Close()
+		defer bboltClient.Close()
+		return keys, err
 	}
 
 	if sc.Redis != nil && sc.Redis.client != nil {
@@ -116,10 +117,10 @@ func (sc *StorageClient) get(key []byte) ([]byte, error) {
 			return nil, err
 		}
 
-		bboltClient.View(func(tx *bolt.Tx) error {
+		err = bboltClient.View(func(tx *bolt.Tx) error {
 			bucket := tx.Bucket([]byte(sc.Bbolt.BucketName))
 			if bucket == nil {
-				err = fmt.Errorf("Bucket %q not found", sc.Bbolt.BucketName)
+				err = fmt.Errorf("bucket %q not found", sc.Bbolt.BucketName)
 				return err
 			}
 
@@ -128,7 +129,8 @@ func (sc *StorageClient) get(key []byte) ([]byte, error) {
 			return nil
 		})
 
-		bboltClient.Close()
+		defer bboltClient.Close()
+		return value, err
 	}
 
 	if sc.Redis != nil && sc.Redis.client != nil {
@@ -141,6 +143,40 @@ func (sc *StorageClient) get(key []byte) ([]byte, error) {
 	}
 
 	return value, err
+}
+
+func (sc *StorageClient) delete(key []byte) error {
+
+	if sc.Bbolt != nil {
+		bboltClient, err := bolt.Open(sc.Bbolt.SotoragePath, sc.Bbolt.client.mode, sc.Bbolt.client.options)
+		if err != nil {
+			return err
+		}
+
+		err = bboltClient.Update(func(tx *bolt.Tx) error {
+			bucket := tx.Bucket([]byte(sc.Bbolt.BucketName))
+			if bucket == nil {
+				err = fmt.Errorf("bucket %q not found", sc.Bbolt.BucketName)
+				return err
+			}
+
+			err = bucket.Delete(key)
+
+			return err
+		})
+
+		defer bboltClient.Close()
+		return err
+	}
+
+	if sc.Redis != nil && sc.Redis.client != nil {
+		err := sc.Redis.client.Del(string(key)).Err()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Set put new key value pair
@@ -164,7 +200,7 @@ func (sc *StorageClient) set(key, value []byte) error {
 			return nil
 		})
 
-		bboltClient.Close()
+		defer bboltClient.Close()
 
 		return err
 	}

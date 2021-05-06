@@ -44,7 +44,7 @@ storage := &StorageClient{
 }
 ```
 
-### SDK
+### Create a new instance
 Create a new SDK instance
 ```go
 avocado := sdk.Avocado{}
@@ -69,4 +69,9 @@ decryptedValue, err := avocado.FindAndDecryptValueBy([]byte("key1"), "/path/to/m
 #### Get all keys
 ```go
 keys, err := avocado.GetAllKeys()
+```
+
+#### Remove a key
+```go
+err := avocado.Delete([]byte("key1"))
 ```
